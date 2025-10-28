@@ -1,7 +1,11 @@
 "use client";
 import { useState } from "react";
 
-export default function FileUploader({ onData }: { onData: (rows: any[]) => void }) {
+export default function FileUploader({
+    onUpload,
+}: {
+    onUpload: (data: { parsed: any[]; html: string }) => void;
+}) {
     const [message, setMessage] = useState("");
     const [fileName, setFileName] = useState("");
 
@@ -29,16 +33,18 @@ export default function FileUploader({ onData }: { onData: (rows: any[]) => void
             const doc = parser.parseFromString(html, "text/html");
             const rows = Array.from(doc.querySelectorAll("table tr"));
 
-            const data = rows
-                .map((tr) => Array.from(tr.querySelectorAll("td, th")).map((td) => td.textContent?.trim()))
+            const parsed = rows
+                .map((tr) =>
+                    Array.from(tr.querySelectorAll("td, th")).map((td) => td.textContent?.trim())
+                )
                 .filter((r) => r.length > 1)
                 .map((r) => ({
                     Login: r[0],
                     Name: r[1],
                 }))
-                .slice(1); // skip header
+                .slice(1); // skip header row
 
-            onData(data);
+            onUpload({ parsed, html });
         };
 
         reader.readAsText(file);
