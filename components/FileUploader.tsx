@@ -33,14 +33,19 @@ export default function FileUploader({
             const doc = parser.parseFromString(html, "text/html");
             const rows = Array.from(doc.querySelectorAll("table tr"));
 
+            // Extract all 6 columns: Login, Name, Last name, Middle name, Credit, Equity
             const parsed = rows
                 .map((tr) =>
                     Array.from(tr.querySelectorAll("td, th")).map((td) => td.textContent?.trim())
                 )
-                .filter((r) => r.length > 1)
+                .filter((r) => r.length >= 6)
                 .map((r) => ({
                     Login: r[0],
                     Name: r[1],
+                    LastName: r[2],
+                    MiddleName: r[3],
+                    Credit: r[4],
+                    Equity: r[5],
                 }))
                 .slice(1); // skip header row
 
