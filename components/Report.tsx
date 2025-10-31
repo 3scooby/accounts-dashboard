@@ -39,6 +39,8 @@ interface BookEntry {
 export default function Report({ data = [], groups = [] }: ReportProps) {
     const [usdToAed, setUsdToAed] = useState<number>(3.67);
     const [oldBalance, setOldBalance] = useState<number>(0);
+    const [newValue, setNewValue] = useState("");
+    const [newValueNumber, setNewValueNumber] = useState<number>(0);
     const [isNameFilterOpen, setIsNameFilterOpen] = useState(false);
     const [isGroupFilterOpen, setIsGroupFilterOpen] = useState(false);
     const [bookEntries, setBookEntries] = useState<BookEntry[]>([]);
@@ -60,11 +62,15 @@ export default function Report({ data = [], groups = [] }: ReportProps) {
         return data
             .filter((r) => (selectedNames.length ? selectedNames.includes(r.Name) : true))
             .filter((r) => {
-                const groupNames = groups.filter((g) => String(g.ID) === String(r.Login)).map((g) => g.GROUP || "");
+                const groupNames = groups
+                    .filter((g) => String(g.ID) === String(r.Login))
+                    .map((g) => g.GROUP);
                 if (selectedGroup) return groupNames.includes(selectedGroup);
                 return true;
             });
     }, [data, groups, selectedNames, selectedGroup]);
+
+console.log(filteredRows);
 
     const handleConfirmBookTotal = () => {
         if (!selectedGroup) return;
@@ -84,17 +90,41 @@ export default function Report({ data = [], groups = [] }: ReportProps) {
             const equity = typeof r.Equity === "string" ? parseFloat(r.Equity || "0") : Number(r.Equity || 0);
             const pnl = credit - equity;
             const pnlAed = pnl * usdToAed;
-            const groupData = groups.find((g) => String(g.ID) === String(r.Login));
+
+            // ✅ Match by BOTH Group and Login
+            const groupData = groups.find(
+                (g) => String(g.ID) === String(r.Login) && g.GROUP === selectedGroup
+            );
+
+            const uniqueId = `${groupData?.GROUP || "Unknown"}_${r.Login}`;
             const partnerPercent = Number(groupData?.Share || 0);
             const partnerShare = Math.round(pnlAed * (partnerPercent / 100));
             const netAfterPartner = Math.round(pnlAed - partnerShare);
-            const groupName = groupData?.GROUP || "";
-            return { ...r, pnl, pnlAed, partnerPercent, partnerShare, netAfterPartner, groupName };
+            const groupName = groupData?.GROUP;
+
+            return {
+                ...r,
+                uniqueId,
+                pnl,
+                pnlAed,
+                partnerPercent,
+                partnerShare,
+                netAfterPartner,
+                groupName,
+            };
         });
-    }, [filteredRows, groups, usdToAed]);
+    }, [filteredRows, groups, usdToAed, selectedGroup]);
+
 
     const totals = useMemo(() => {
-        return enhanced.reduce(
+        if (!selectedGroup) {
+            // if no group is selected, either return all or zeros
+            return { pnl: 0, pnlAed: 0, partnerShare: 0, netAfterPartner: 0 };
+        }
+
+        const groupData = enhanced.filter(r => r.groupName === selectedGroup);
+
+        return groupData.reduce(
             (acc, r) => {
                 acc.pnl += r.pnl || 0;
                 acc.pnlAed += r.pnlAed || 0;
@@ -104,7 +134,8 @@ export default function Report({ data = [], groups = [] }: ReportProps) {
             },
             { pnl: 0, pnlAed: 0, partnerShare: 0, netAfterPartner: 0 }
         );
-    }, [enhanced]);
+    }, [enhanced, selectedGroup]);
+
 
     const getAccountsByGroup = () => {
         const grouped: Record<string, string[]> = {};
@@ -444,7 +475,25 @@ export default function Report({ data = [], groups = [] }: ReportProps) {
                                     </div>
                                 </td>
                             </tr>
-
+                            {/* Old Balance */}
+                            <tr className="border-t border-gray-300">
+                                <td className="px-3 py-2 text-right font-medium border border-gray-300" colSpan={8}>
+                                    <input
+                                        type="text"
+                                        value={newValue}
+                                        onChange={(e) => setNewValue(e.target.value)}
+                                        className="w-28 border rounded px-2 py-1 text-right focus:ring-2 focus:ring-blue-300"
+                                    />
+                                </td>
+                                <td className="px-3 py-2 text-right border border-gray-300">
+                                    <input
+                                        type="number"
+                                        value={newValueNumber}
+                                        onChange={(e) => setNewValueNumber(parseInt(e.target.value) || 0)}
+                                        className="w-28 border rounded px-2 py-1 text-right focus:ring-2 focus:ring-blue-300"
+                                    />
+                                </td>
+                            </tr>
                             {/* Old Balance */}
                             <tr className="border-t border-gray-300">
                                 <td className="px-3 py-2 text-right font-medium border border-gray-300" colSpan={8}>
@@ -469,7 +518,8 @@ export default function Report({ data = [], groups = [] }: ReportProps) {
                                     {Math.round(
                                         totals.netAfterPartner +
                                         oldBalance +
-                                        (selectedGroup ? totalCommission(selectedGroup) : 0)
+                                        (selectedGroup ? totalCommission(selectedGroup) : 0) +
+                                        newValueNumber
                                     )}
                                 </td>
                             </tr>
@@ -648,9 +698,8 @@ export default function Report({ data = [], groups = [] }: ReportProps) {
                                     colSpan={2}
                                 >
                                     The Book:{" "}
-                                    {(
-                                        profitColumn.reduce((sum, p) => sum + p.amount, 0) -
-                                        lossColumn.reduce((sum, l) => sum + l.amount, 0)
+                                    {(lossColumn.reduce((sum, l) => sum + l.amount, 0)-
+                                        profitColumn.reduce((sum, p) => sum + p.amount, 0)
                                     ).toFixed(2)}
                                 </td>
                             </tr>
