@@ -420,23 +420,28 @@ export default function Report({ data = [], groups = [] }: ReportProps) {
                                     Book Total
                                 </td>
                                 <td className="px-3 py-2 text-right font-semibold text-blue-700 border border-gray-300">
-                                    {Math.round(
-                                        totals.netAfterPartner +
-                                        (selectedGroup ? totalCommission(selectedGroup) : 0)
-                                    )}
-                                    {showConfirmButton && (
-                                        <button
-                                            onClick={handleConfirmBookTotal}
-                                            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md"
-                                        >
-                                            Confirm
-                                        </button>
-                                    )}
-                                    {selectedGroup && confirmedGroups.includes(selectedGroup) && (
-                                        <span className="text-green-600 font-medium text-sm mt-2">
-                                            ✅ Confirmed
+                                    <div className="flex flex-col items-end gap-2">
+                                        <span>
+                                            {Math.round(
+                                                totals.netAfterPartner + (selectedGroup ? totalCommission(selectedGroup) : 0)
+                                            )}
                                         </span>
-                                    )}
+
+                                        {showConfirmButton && (
+                                            <button
+                                                onClick={handleConfirmBookTotal}
+                                                className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                                            >
+                                                Confirm
+                                            </button>
+                                        )}
+
+                                        {selectedGroup && confirmedGroups.includes(selectedGroup) && (
+                                            <span className="text-green-600 font-medium text-sm">
+                                                ✅ Confirmed
+                                            </span>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
 
