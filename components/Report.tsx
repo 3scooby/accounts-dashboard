@@ -88,7 +88,7 @@ console.log(filteredRows);
         return filteredRows.map((r) => {
             const credit = typeof r.Credit === "string" ? parseFloat(r.Credit || "0") : Number(r.Credit || 0);
             const equity = typeof r.Equity === "string" ? parseFloat(r.Equity || "0") : Number(r.Equity || 0);
-            const pnl = credit - equity;
+            const pnl = equity - credit;
             const pnlAed = pnl * usdToAed;
 
             // ✅ Match by BOTH Group and Login
