@@ -70,8 +70,6 @@ export default function Report({ data = [], groups = [] }: ReportProps) {
             });
     }, [data, groups, selectedNames, selectedGroup]);
 
-console.log(filteredRows);
-
     const handleConfirmBookTotal = () => {
         if (!selectedGroup) return;
         setBookEntries((prev) => prev.filter((entry) => entry.group !== selectedGroup));
@@ -88,19 +86,28 @@ console.log(filteredRows);
         return filteredRows.map((r) => {
             const credit = typeof r.Credit === "string" ? parseFloat(r.Credit || "0") : Number(r.Credit || 0);
             const equity = typeof r.Equity === "string" ? parseFloat(r.Equity || "0") : Number(r.Equity || 0);
-            const pnl = equity - credit;
-            const pnlAed = pnl * usdToAed;
-
+    
+           
             // ✅ Match by BOTH Group and Login
             const groupData = groups.find(
                 (g) => String(g.ID) === String(r.Login) && g.GROUP === selectedGroup
             );
+            const groupName = groupData?.GROUP;
+            let pnl = 0;
+
+            if (groupName === "SKY" || groupName === "SRFX") {
+                pnl = credit-equity;
+            } else {
+                pnl = equity - credit;
+            }
+
+            const pnlAed = pnl * usdToAed;
 
             const uniqueId = `${groupData?.GROUP || "Unknown"}_${r.Login}`;
             const partnerPercent = Number(groupData?.Share || 0);
             const partnerShare = Math.round(pnlAed * (partnerPercent / 100));
             const netAfterPartner = Math.round(pnlAed - partnerShare);
-            const groupName = groupData?.GROUP;
+          
 
             return {
                 ...r,
